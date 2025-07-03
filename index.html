@@ -223,50 +223,67 @@
             } catch (error) {
                 console.warn("Could not load words.txt for matrix effect, using fallback.", error);
             }
+            
+            // Define colors using root variables for consistency
+            const colors = {
+                mainGreen: getComputedStyle(document.documentElement).getPropertyValue('--green').trim(),
+                lightGreen: '#bfffdc', // A fixed lighter variant for the lead character
+                accentNavy: getComputedStyle(document.documentElement).getPropertyValue('--accent-navy').trim()
+            };
 
-            const fontSize = 16;
-            const columns = Math.floor(canvas.width / fontSize); 
-            const drops = Array(columns).fill(0).map(() => Math.random() * canvas.height);
-            const dropSpeed = Array(columns).fill(0).map(() => Math.random() * 4 + 1); 
-            const columnWords = Array(columns).fill(0).map(() => words[Math.floor(Math.random() * words.length)]);
+            const baseFontSize = 10;
+            const columns = Math.floor(canvas.width / (baseFontSize * 1.5));
+            const drops = new Array(columns).fill(0);
+            
+            // Initialize each column with its own properties
+            const columnsData = new Array(columns).fill(null).map(() => ({
+                word: words[Math.floor(Math.random() * words.length)],
+                y: Math.random() * canvas.height,
+                depth: Math.random() * 0.7 + 0.3, // Depth from 0.3 (far) to 1.0 (near)
+            }));
 
             function drawMatrix() {
-                ctx.fillStyle = 'rgba(10, 25, 47, 0.1)';
+                ctx.fillStyle = 'rgba(10, 25, 47, 0.15)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 
-                ctx.font = `bold ${fontSize}px Roboto Mono`;
-                
-                for (let i = 0; i < drops.length; i++) {
-                    const word = columnWords[i];
-                    const x = i * fontSize;
+                for (let i = 0; i < columnsData.length; i++) {
+                    const col = columnsData[i];
+                    
+                    const fontSize = baseFontSize * (1 + col.depth); // From ~13px to 20px
+                    const speed = (col.depth * col.depth) * 4 + 1; // Faster speed for closer objects (non-linear)
 
-                    for (let j = 0; j < word.length; j++) {
-                        const character = word[j];
-                        const y = drops[i] + (j * fontSize);
+                    ctx.font = `bold ${fontSize}px "Roboto Mono"`;
+                    ctx.globalAlpha = col.depth * 0.8 + 0.2; // Opacity from 0.44 to 1.0
+                    
+                    for (let j = 0; j < col.word.length; j++) {
+                        const character = col.word[j];
+                        const yPos = col.y + (j * fontSize);
 
-                        if (y < 0 || y > canvas.height) continue;
+                        if (yPos > canvas.height) continue;
                         
-                        // 3D Effect: Draw a dark navy shadow first
-                        ctx.fillStyle = '#00004d'; // Dark navy shadow
-                        ctx.fillText(character, x + 1.5, y + 1.5);
-
-                        // Draw the main character on top
-                        if (j === word.length - 1) {
-                            ctx.fillStyle = '#bfffdc'; // Lighter green for the lead character
+                        // Set fill style
+                        if (j === col.word.length - 1) {
+                            ctx.fillStyle = colors.lightGreen;
+                        } else if (Math.random() < 0.1) { // 10% chance for navy accent
+                            ctx.fillStyle = colors.accentNavy;
                         } else {
-                            ctx.fillStyle = '#00f7a5'; // Main green
+                            ctx.fillStyle = colors.mainGreen;
                         }
-                        ctx.fillText(character, x, y);
+                        
+                        ctx.fillText(character, i * baseFontSize * 1.5, yPos);
                     }
                     
-                    if (drops[i] > canvas.height) {
-                        drops[i] = -fontSize * columnWords[i].length;
-                        columnWords[i] = words[Math.floor(Math.random() * words.length)];
-                        dropSpeed[i] = Math.random() * 4 + 1;
+                    // Move the column down
+                    col.y += speed;
+
+                    // Reset column when it's well off-screen
+                    if (col.y > canvas.height + fontSize * col.word.length) {
+                        col.y = -fontSize * col.word.length;
+                        col.word = words[Math.floor(Math.random() * words.length)];
+                        col.depth = Math.random() * 0.7 + 0.3;
                     }
-                    
-                    drops[i] += dropSpeed[i];
                 }
+                ctx.globalAlpha = 1; // Reset global alpha
             }
             
             setInterval(drawMatrix, 33);
@@ -274,17 +291,7 @@
             window.addEventListener('resize', () => {
                  canvas.width = window.innerWidth;
                  canvas.height = window.innerHeight;
-                 const oldColumns = drops.length;
-                 const newColumns = Math.floor(canvas.width / fontSize);
-                 if (newColumns > oldColumns) {
-                     drops.push(...Array(newColumns - oldColumns).fill(0).map(() => Math.random() * canvas.height));
-                     dropSpeed.push(...Array(newColumns - oldColumns).fill(0).map(() => Math.random() * 4 + 1));
-                     columnWords.push(...Array(newColumns - oldColumns).fill(0).map(() => words[Math.floor(Math.random() * words.length)]));
-                 } else if (newColumns < oldColumns) {
-                     drops.length = newColumns;
-                     dropSpeed.length = newColumns;
-                     columnWords.length = newColumns;
-                 }
+                 // On resize, we can just let the existing logic handle column positioning
             });
         }
 
