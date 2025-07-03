@@ -1,1 +1,24 @@
-sdfsdfsdf
+
+            }
+        }
+
+        // Initialize the wiki system
+        const wiki = new DynamicWiki();
+
+        // Global functions for HTML interaction
+        function loadWikiContent() {
+            const repoUrl = document.getElementById('repoUrl').value.trim();
+            const folderPath = document.getElementById('folderPath').value.trim();
+            
+            if (!repoUrl) {
+                wiki.showStatus('Please enter a repository URL', 'error');
+                return;
+            }
+            
+            wiki.loadWikiContent(repoUrl, folderPath);
+        }
+
+        function toggleFile(fileId) {
+            const fileEntry = document.getElementById(fileId);
+            if (fileEntry) {
+                fileEntry.classList.toggle('expanded');
