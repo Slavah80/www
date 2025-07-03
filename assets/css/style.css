@@ -1,297 +1,262 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>CyberSec Work Showcase</title>
-    <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/style.css">
-</head>
-<body>
-    <div id="matrix-bg"></div>
-    <div class="container">
-        <header class="header">
-            <h1>Remote Cybersecurity Opportunities</h1>
-            <p class="subtitle">A collection of my recent projects and analyses</p>
-        </header>
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
 
-        <div class="search-section">
-            <div class="search-container">
-                <input type="text" id="searchInput" placeholder="Filter by project name..." class="search-input">
-                <svg class="search-icon" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-                    <circle cx="11" cy="11" r="8"></circle>
-                    <path d="m21 21-4.35-4.35"></path>
-                </svg>
-            </div>
-        </div>
+:root {
+    --dark-navy: #0a192f;
+    --navy-slate: #112240; /* A darker, richer navy for elements */
+    --light-slate: #ccd6f6;
+    --slate: #8892b0;
+    --green: #00f7a5;
+    --cyan: #64ffda;
+    --font-sans: 'Roboto Mono', sans-serif;
+    --transition: all 0.25s cubic-bezier(0.645, 0.045, 0.355, 1);
+}
 
-        <div class="results-section">
-            <div id="loadingSpinner" class="loading hidden">
-                <div class="spinner"></div>
-                <p>Accessing Secure Archives...</p>
-            </div>
-            
-            <div id="errorMessage" class="error hidden"></div>
-            
-            <div id="resultsContainer" class="results-container hidden">
-                <div id="fileList" class="file-list"></div>
-                <div id="pagination" class="pagination-container"></div>
-            </div>
-        </div>
-    </div>
+body {
+    font-family: var(--font-sans);
+    background-color: var(--dark-navy);
+    color: var(--slate);
+    line-height: 1.6;
+}
 
-    <script>
-        class GitHubFileExplorer {
-            constructor() {
-                this.repoUrl = 'https://github.com/Slavah80/www';
-                this.folderPath = 'test';
-                this.apiUrl = `https://api.github.com/repos/Slavah80/www/contents/${this.folderPath}`;
-                this.files = [];
-                this.filteredFiles = [];
-                this.currentPage = 1;
-                this.entriesPerPage = 10;
-                
-                this.initializeElements();
-                this.bindEvents();
-                this.loadFiles();
-            }
+#matrix-bg {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    z-index: -1;
+    opacity: 0.5;
+}
 
-            initializeElements() {
-                this.searchInput = document.getElementById('searchInput');
-                this.loadingSpinner = document.getElementById('loadingSpinner');
-                this.errorMessage = document.getElementById('errorMessage');
-                this.resultsContainer = document.getElementById('resultsContainer');
-                this.fileList = document.getElementById('fileList');
-                this.paginationContainer = document.getElementById('pagination');
-            }
+.container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 5rem 2rem;
+    position: relative;
+    z-index: 1;
+}
 
-            bindEvents() {
-                this.searchInput.addEventListener('input', () => {
-                    this.currentPage = 1;
-                    this.handleSearch();
-                });
-            }
+.header {
+    text-align: center;
+    margin-bottom: 4rem;
+}
 
-            async loadFiles() {
-                try {
-                    this.showLoading();
-                    const response = await fetch(this.apiUrl);
-                    
-                    if (!response.ok) {
-                        throw new Error(`[${response.status}] API request failed. This may be due to rate limiting.`);
-                    }
-                    
-                    const data = await response.json();
-                    
-                    const filesToProcess = data.filter(item => 
-                        item.type === 'file' && 
-                        !item.name.includes('.') &&
-                        item.name !== 'words.txt' 
-                    );
+.header h1 {
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 700;
+    margin-bottom: 1rem;
+    color: var(--light-slate);
+    letter-spacing: 1px;
+}
 
-                    const filePromises = filesToProcess.map(async file => {
-                        const contentResponse = await fetch(file.download_url);
-                        if (!contentResponse.ok) return null;
+.subtitle {
+    font-size: clamp(1rem, 3vw, 1.2rem);
+    color: var(--green);
+}
 
-                        const content = await contentResponse.text();
-                        const commitResponse = await fetch(`https://api.github.com/repos/Slavah80/www/commits?path=${file.path}&per_page=1`);
-                        let lastModified = 'N/A';
-                        if(commitResponse.ok) {
-                            const commits = await commitResponse.json();
-                            if(commits.length > 0) {
-                                lastModified = new Date(commits[0].commit.committer.date).toLocaleDateString('en-CA');
-                            }
-                        }
+.search-section {
+    margin-bottom: 3rem;
+}
 
-                        return {
-                            name: file.name,
-                            content: content,
-                            lastModified: lastModified,
-                        };
-                    });
-                    
-                    this.files = (await Promise.all(filePromises)).filter(Boolean);
-                    this.filteredFiles = [...this.files];
+.search-container {
+    position: relative;
+    max-width: 600px;
+    margin: 0 auto;
+}
 
-                    this.displayPage();
-                    this.hideLoading();
-                    
-                } catch (error) {
-                    this.showError(`Error fetching data: ${error.message}`);
-                    this.hideLoading();
-                }
-            }
+.search-input {
+    width: 100%;
+    padding: 1rem 1.5rem 1rem 3.5rem;
+    font-size: 1rem;
+    font-family: var(--font-sans);
+    color: var(--light-slate);
+    background-color: rgba(17, 34, 64, 0.7); /* Using navy-slate with alpha */
+    border: 1px solid var(--slate);
+    border-radius: 8px;
+    outline: none;
+    transition: var(--transition);
+    backdrop-filter: blur(5px);
+}
 
-            handleSearch() {
-                const query = this.searchInput.value.toLowerCase().trim();
-                this.filteredFiles = this.files.filter(file =>
-                    file.name.toLowerCase().includes(query)
-                );
-                this.displayPage();
-            }
-        
-            displayPage() {
-                if (this.filteredFiles.length === 0 && this.searchInput.value) {
-                    this.fileList.innerHTML = '';
-                    this.paginationContainer.innerHTML = '';
-                    this.showError('No matching projects were found.');
-                    return;
-                }
+.search-input:focus {
+    border-color: var(--green);
+    box-shadow: 0 0 0 3px rgba(100, 255, 218, 0.3);
+}
 
-                this.hideError();
-                this.resultsContainer.classList.remove('hidden');
+.search-input::placeholder {
+    color: var(--slate);
+}
 
-                const startIndex = (this.currentPage - 1) * this.entriesPerPage;
-                const endIndex = startIndex + this.entriesPerPage;
-                const paginatedFiles = this.filteredFiles.slice(startIndex, endIndex);
+.search-icon {
+    position: absolute;
+    left: 1rem;
+    top: 50%;
+    transform: translateY(-50%);
+    color: var(--slate);
+}
 
-                this.fileList.innerHTML = paginatedFiles.map(file => {
-                    const wordCount = file.content.split(/\s+/).filter(Boolean).length;
-                    const readTime = Math.ceil(wordCount / 200);
-                    
-                    return `
-                        <div class="file-item">
-                            <div class="file-header" onclick="this.parentElement.classList.toggle('expanded')">
-                                <span class="file-name">${file.name}</span>
-                                <div class="file-meta">
-                                    <span class="file-read-time">~${readTime} min read</span>
-                                    <span class="file-date">Updated: ${file.lastModified}</span>
-                                    <span class="expand-icon">+</span>
-                                </div>
-                            </div>
-                            <div class="file-content">
-                                <pre><code>${this.escapeHtml(file.content)}</code></pre>
-                            </div>
-                        </div>
-                    `;
-                }).join('');
-                
-                this.setupPagination();
-            }
+.loading {
+    text-align: center;
+    padding: 3rem;
+    color: var(--light-slate);
+}
 
-            setupPagination() {
-                const pageCount = Math.ceil(this.filteredFiles.length / this.entriesPerPage);
-                this.paginationContainer.innerHTML = '';
-                
-                if (pageCount <= 1) return;
+.spinner {
+    width: 50px;
+    height: 50px;
+    border: 3px solid var(--slate);
+    border-top: 3px solid var(--green);
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+    margin: 0 auto 1rem;
+}
 
-                for (let i = 1; i <= pageCount; i++) {
-                    const btn = document.createElement('button');
-                    btn.className = `pagination-btn ${i === this.currentPage ? 'active' : ''}`;
-                    btn.innerText = i;
-                    btn.addEventListener('click', () => {
-                        this.currentPage = i;
-                        this.displayPage();
-                        window.scrollTo(0, 0);
-                    });
-                    this.paginationContainer.appendChild(btn);
-                }
-            }
-            
-            escapeHtml(text) {
-                return text.replace(/</g, "<").replace(/>/g, ">");
-            }
+@keyframes spin {
+    to { transform: rotate(360deg); }
+}
 
-            showLoading() { this.loadingSpinner.classList.remove('hidden'); }
-            hideLoading() { this.loadingSpinner.classList.add('hidden'); }
-            showError(message) {
-                this.errorMessage.textContent = message;
-                this.errorMessage.classList.remove('hidden');
-            }
-            hideError() { this.errorMessage.classList.add('hidden'); }
-        }
+.error {
+    background-color: rgba(255, 71, 87, 0.1);
+    border: 1px solid #ff4757;
+    color: #ff4757;
+    padding: 1.5rem;
+    border-radius: 8px;
+    text-align: center;
+    margin: 2rem 0;
+}
 
-        async function initializeMatrix() {
-            const matrixBg = document.getElementById('matrix-bg');
-            if (!matrixBg) return;
+.file-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+}
 
-            const canvas = document.createElement('canvas');
-            matrixBg.appendChild(canvas);
-            const ctx = canvas.getContext('2d');
+.file-item {
+    background-color: var(--navy-slate); /* Deeper navy element background */
+    border: 1px solid #2a3c57;
+    border-radius: 8px;
+    transition: var(--transition);
+    overflow: hidden;
+}
 
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
+.file-item:hover {
+    transform: translateY(-5px);
+    border-color: var(--cyan);
+}
 
-            let words = ['Loading', 'Matrix', 'Secure', 'Code', 'Cyber', 'Network', 'Data'];
-            try {
-                const wordsUrl = 'https://raw.githubusercontent.com/Slavah80/www/main/test/words.txt';
-                const response = await fetch(wordsUrl);
-                if (response.ok) {
-                    const textContent = await response.text();
-                    words = textContent.split(/\s+/).filter(Boolean);
-                }
-            } catch (error) {
-                console.warn("Could not load words.txt for matrix effect, using fallback.", error);
-            }
+.file-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1.5rem;
+    cursor: pointer;
+}
 
-            const fontSize = 16;
-            const columns = Math.floor(canvas.width / fontSize); 
-            const drops = Array(columns).fill(0).map(() => Math.random() * canvas.height);
-            const dropSpeed = Array(columns).fill(0).map(() => Math.random() * 4 + 1); 
-            const columnWords = Array(columns).fill(0).map(() => words[Math.floor(Math.random() * words.length)]);
+.file-name {
+    font-weight: 700;
+    font-size: 1.25rem;
+    color: var(--light-slate);
+}
 
-            function drawMatrix() {
-                ctx.fillStyle = 'rgba(10, 25, 47, 0.1)';
-                ctx.fillRect(0, 0, canvas.width, canvas.height);
-                
-                ctx.font = `bold ${fontSize}px Roboto Mono`;
-                
-                for (let i = 0; i < drops.length; i++) {
-                    const word = columnWords[i];
-                    const x = i * fontSize;
+.file-meta {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    font-size: 0.9rem;
+}
 
-                    for (let j = 0; j < word.length; j++) {
-                        const character = word[j];
-                        const y = drops[i] + (j * fontSize);
+.file-read-time {
+    color: var(--cyan);
+    font-weight: 700;
+}
 
-                        if (y < 0 || y > canvas.height) continue;
-                        
-                        // 3D Effect: Draw a dark navy shadow first
-                        ctx.fillStyle = '#00004d'; // Dark navy shadow
-                        ctx.fillText(character, x + 1.5, y + 1.5);
+.file-date {
+    color: var(--slate);
+}
 
-                        // Draw the main character on top
-                        if (j === word.length - 1) {
-                            ctx.fillStyle = '#bfffdc'; // Lighter green for the lead character
-                        } else {
-                            ctx.fillStyle = '#00f7a5'; // Main green
-                        }
-                        ctx.fillText(character, x, y);
-                    }
-                    
-                    if (drops[i] > canvas.height) {
-                        drops[i] = -fontSize * columnWords[i].length;
-                        columnWords[i] = words[Math.floor(Math.random() * words.length)];
-                        dropSpeed[i] = Math.random() * 4 + 1;
-                    }
-                    
-                    drops[i] += dropSpeed[i];
-                }
-            }
-            
-            setInterval(drawMatrix, 33);
+.expand-icon {
+    font-size: 2rem;
+    color: var(--green);
+    transition: transform 0.3s ease;
+    line-height: 1;
+}
 
-            window.addEventListener('resize', () => {
-                 canvas.width = window.innerWidth;
-                 canvas.height = window.innerHeight;
-                 const oldColumns = drops.length;
-                 const newColumns = Math.floor(canvas.width / fontSize);
-                 if (newColumns > oldColumns) {
-                     drops.push(...Array(newColumns - oldColumns).fill(0).map(() => Math.random() * canvas.height));
-                     dropSpeed.push(...Array(newColumns - oldColumns).fill(0).map(() => Math.random() * 4 + 1));
-                     columnWords.push(...Array(newColumns - oldColumns).fill(0).map(() => words[Math.floor(Math.random() * words.length)]));
-                 } else if (newColumns < oldColumns) {
-                     drops.length = newColumns;
-                     dropSpeed.length = newColumns;
-                     columnWords.length = newColumns;
-                 }
-            });
-        }
+.file-item.expanded .expand-icon {
+    transform: rotate(45deg);
+}
 
-        document.addEventListener('DOMContentLoaded', () => {
-            new GitHubFileExplorer();
-            initializeMatrix();
-        });
-    </script>
-</body>
-</html>
+.file-content {
+    max-height: 0;
+    overflow: hidden;
+    transition: max-height 0.5s ease-in-out;
+}
+
+.file-item.expanded .file-content {
+    max-height: 1000px; 
+    overflow-y: auto;
+    transition: max-height 0.5s ease-in-out;
+}
+
+.file-content pre {
+    background-color: rgba(10, 25, 47, 0.9); /* Darker code background */
+    padding: 1.5rem;
+    margin: 0 1.5rem 1.5rem;
+    border-radius: 8px;
+    border: 1px solid #2a3c57;
+    overflow-x: auto;
+    font-size: 0.9rem;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.file-content code {
+    font-family: var(--font-sans);
+    color: var(--light-slate);
+}
+
+.pagination-container {
+    display: flex;
+    justify-content: center;
+    margin-top: 3rem;
+    gap: 0.5rem;
+}
+
+.pagination-btn {
+    font-family: var(--font-sans);
+    background-color: transparent;
+    border: 1px solid var(--green);
+    color: var(--green);
+    padding: 0.5rem 1rem;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.pagination-btn:hover,
+.pagination-btn.active {
+    background-color: var(--green);
+    color: var(--dark-navy);
+}
+
+.hidden {
+    display: none;
+}
+
+@media (max-width: 768px) {
+    .container {
+        padding: 3rem 1rem;
+    }
+    .file-header {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 1rem;
+    }
+    .file-meta {
+        width: 100%;
+        justify-content: space-between;
+    }
+}
