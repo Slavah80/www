@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>CyberSec Work Showcase</title>
     <link href="https://fonts.googleapis.com/css2?family=Roboto+Mono:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="assets/css/style.css">
+    <link rel="stylesheet" href="assets/css/style3.css">
 </head>
 <body>
     <div id="matrix-bg"></div>
@@ -83,6 +83,7 @@
                     
                     const data = await response.json();
                     
+                    // Filter for files without extensions, excluding 'words.txt' from the list
                     const filesToProcess = data.filter(item => 
                         item.type === 'file' && 
                         !item.name.includes('.') &&
@@ -223,75 +224,64 @@
             } catch (error) {
                 console.warn("Could not load words.txt for matrix effect, using fallback.", error);
             }
-            
-            // Define colors using root variables for consistency
-            const colors = {
-                mainGreen: getComputedStyle(document.documentElement).getPropertyValue('--green').trim(),
-                lightGreen: '#bfffdc', // A fixed lighter variant for the lead character
-                accentNavy: getComputedStyle(document.documentElement).getPropertyValue('--accent-navy').trim()
-            };
 
-            const baseFontSize = 10;
-            const columns = Math.floor(canvas.width / (baseFontSize * 1.5));
-            const drops = new Array(columns).fill(0);
-            
-            // Initialize each column with its own properties
-            const columnsData = new Array(columns).fill(null).map(() => ({
-                word: words[Math.floor(Math.random() * words.length)],
-                y: Math.random() * canvas.height,
-                depth: Math.random() * 0.7 + 0.3, // Depth from 0.3 (far) to 1.0 (near)
-            }));
+            const fontSize = 16;
+            const columns = Math.floor(canvas.width / fontSize); 
+            const drops = Array(columns).fill(0).map(() => Math.random() * canvas.height);
+            // Increased speed range for a faster effect
+            const dropSpeed = Array(columns).fill(0).map(() => Math.random() * 4 + 1); 
+            const columnWords = Array(columns).fill(0).map(() => words[Math.floor(Math.random() * words.length)]);
 
             function drawMatrix() {
-                ctx.fillStyle = 'rgba(10, 25, 47, 0.15)';
+                ctx.fillStyle = 'rgba(10, 25, 47, 0.1)';
                 ctx.fillRect(0, 0, canvas.width, canvas.height);
                 
-                for (let i = 0; i < columnsData.length; i++) {
-                    const col = columnsData[i];
-                    
-                    const fontSize = baseFontSize * (1 + col.depth); // From ~13px to 20px
-                    const speed = (col.depth * col.depth) * 4 + 1; // Faster speed for closer objects (non-linear)
+                ctx.font = `bold ${fontSize}px Roboto Mono`;
+                
+                for (let i = 0; i < drops.length; i++) {
+                    const word = columnWords[i];
 
-                    ctx.font = `bold ${fontSize}px "Roboto Mono"`;
-                    ctx.globalAlpha = col.depth * 0.8 + 0.2; // Opacity from 0.44 to 1.0
-                    
-                    for (let j = 0; j < col.word.length; j++) {
-                        const character = col.word[j];
-                        const yPos = col.y + (j * fontSize);
+                    for (let j = 0; j < word.length; j++) {
+                        const character = word[j];
+                        const y = drops[i] + (j * fontSize);
 
-                        if (yPos > canvas.height) continue;
+                        if (y < 0 || y > canvas.height) continue;
                         
-                        // Set fill style
-                        if (j === col.word.length - 1) {
-                            ctx.fillStyle = colors.lightGreen;
-                        } else if (Math.random() < 0.1) { // 10% chance for navy accent
-                            ctx.fillStyle = colors.accentNavy;
+                        if (j === word.length - 1) {
+                            ctx.fillStyle = '#bfffdc'; 
                         } else {
-                            ctx.fillStyle = colors.mainGreen;
+                            ctx.fillStyle = '#00f7a5';
                         }
                         
-                        ctx.fillText(character, i * baseFontSize * 1.5, yPos);
+                        ctx.fillText(character, i * fontSize, y);
                     }
                     
-                    // Move the column down
-                    col.y += speed;
-
-                    // Reset column when it's well off-screen
-                    if (col.y > canvas.height + fontSize * col.word.length) {
-                        col.y = -fontSize * col.word.length;
-                        col.word = words[Math.floor(Math.random() * words.length)];
-                        col.depth = Math.random() * 0.7 + 0.3;
+                    if (drops[i] > canvas.height) {
+                        drops[i] = -fontSize * columnWords[i].length;
+                        columnWords[i] = words[Math.floor(Math.random() * words.length)];
+                        dropSpeed[i] = Math.random() * 4 + 1; // Reset speed for the new word
                     }
+                    
+                    drops[i] += dropSpeed[i];
                 }
-                ctx.globalAlpha = 1; // Reset global alpha
             }
-            
+            // Decreased interval for a faster refresh rate
             setInterval(drawMatrix, 33);
 
             window.addEventListener('resize', () => {
                  canvas.width = window.innerWidth;
                  canvas.height = window.innerHeight;
-                 // On resize, we can just let the existing logic handle column positioning
+                 const oldColumns = drops.length;
+                 const newColumns = Math.floor(canvas.width / fontSize);
+                 if (newColumns > oldColumns) {
+                     drops.push(...Array(newColumns - oldColumns).fill(0).map(() => Math.random() * canvas.height));
+                     dropSpeed.push(...Array(newColumns - oldColumns).fill(0).map(() => Math.random() * 4 + 1));
+                     columnWords.push(...Array(newColumns - oldColumns).fill(0).map(() => words[Math.floor(Math.random() * words.length)]));
+                 } else if (newColumns < oldColumns) {
+                     drops.length = newColumns;
+                     dropSpeed.length = newColumns;
+                     columnWords.length = newColumns;
+                 }
             });
         }
 
