@@ -1,0 +1,17 @@
+=== 'Enter') {
+                        loadWikiContent();
+                    }
+                });
+            });
+        });
+
+        // Example: Auto-load if URL parameters are present
+        const urlParams = new URLSearchParams(window.location.search);
+        const repoParam = urlParams.get('repo');
+        const folderParam = urlParams.get('folder');
+
+        if (repoParam) {
+            document.getElementById('repoUrl').value = repoParam;
+            if (folderParam) {
+                document.getElementById('folderPath').value = folderParam;
+            }
