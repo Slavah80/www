@@ -1,0 +1,3 @@
+Microsoft is retiring the Azure AD Graph API sometime after June 30, 2023 (announcement). This retirement includes the Azure AD PowerShell module. In its place, Microsoft has released the Microsoft Graph PowerShell module. The Microsoft Graph PowerShell module is the next-generation way of managing Microsoft cloud services using PowerShell. If you have used MSOnline or Azure AD PowerShell in the past, you'll need to read on to learn about this new module.
+
+In this tutorial, you will learn about the Microsoft Graph module, including how to authenticate, find cmdlet permissions, and upgrade from Azure AD PowerShell. To follow along with this tutorial, you will need either Windows PowerShell 5.1 or PowerShell 7. This tutorial uses PowerShell version 7.3.4.
